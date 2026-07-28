@@ -9,7 +9,8 @@
 | 项目 | 关键词 | 工具链 |
 |---|---|---|
 | [电商用户消费行为分析](./ecommerce_analysis/) | SQL多表关联、RFM分层、指标体系 | MySQL + Python + Excel |
-| [个人信用违约预测与评分卡](./credit_scoring/) | WOE/IV、逻辑回归、评分卡 | Python (sklearn、pandas) |
+| [个人信用违约预测与评分卡](./credit_scoring/) | WOE/IV、逻辑回归、评分卡 | Python (sklearn) |
+| [AB 测试：营销策略效果评估](./ab_testing/) | 卡方检验、效应量、置信区间 | Python (scipy) |
 
 ---
 
