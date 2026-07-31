@@ -1,6 +1,5 @@
 """
 Day 4: 业务分析实战
-三个分析：RFM用户分层 / 复购率漏斗 / 评分与消费关联
 """
 import pymysql
 import pandas as pd
