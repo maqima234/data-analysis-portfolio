@@ -15,7 +15,7 @@ MYSQL_CONFIG = {
 }
 DATA_DIR = r'C:\Users\86186\Desktop\ecommerce_project\data'
 
-# ============ 连接 MySQL（先不指定数据库） ============
+# ============ 连接 MySQL ============
 conn = pymysql.connect(**MYSQL_CONFIG)
 cur = conn.cursor()
 
@@ -82,7 +82,7 @@ CREATE TABLE order_payments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 """)
 
-# 评价表（注意：review_id 有重复，这是真实数据特征）
+# 评价表
 cur.execute("""
 CREATE TABLE order_reviews (
     review_id VARCHAR(32) NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE product_category_translation (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 """)
 
-print("[OK] 9 张表创建完成")
+print("9 张表创建完成")
 
 # ============ 3. 导入 CSV 数据 ============
 
