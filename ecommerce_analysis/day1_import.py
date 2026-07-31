@@ -1,6 +1,5 @@
 """
 Day 1: CSV → MySQL 数据库表
-目标：创建 ecommerce_analysis 数据库，导入 Olist 电商数据集
 """
 import pymysql
 import csv
