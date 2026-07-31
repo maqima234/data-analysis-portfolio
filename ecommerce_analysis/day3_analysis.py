@@ -1,6 +1,5 @@
 """
 Day 3: SQL + Python 串联分析
-目标：SQL 负责聚合查询，Python 接收结果并可视化
 """
 import pymysql
 import pandas as pd
@@ -9,7 +8,7 @@ import matplotlib
 import warnings
 warnings.filterwarnings('ignore')
 
-# 设置中文字体，防止图里中文乱码
+# 设置中文字体
 matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
