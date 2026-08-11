@@ -1,7 +1,7 @@
 """
 平台销售增长驱动诊断
 诊断问题：GMV 增长来自哪里？
-分析链路：GMV趋势 → 量价拆解 → 新老客贡献 → 品类增量 → 地区集中度 → 结论
+诊断问题：GMV 增长来自哪里？
 """
 import pymysql
 import pandas as pd
