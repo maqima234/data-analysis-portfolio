@@ -1,5 +1,6 @@
 """
-Day 1: CSV → MySQL 数据库表
+数据入库脚本：9张CSV → MySQL 数据库
+创建 ecommerce_analysis 数据库，建表并批量导入 Olist 电商数据集
 """
 import pymysql
 import csv
@@ -211,4 +212,4 @@ for table_name, row_count in cur.fetchall():
 
 cur.close()
 conn.close()
-print("\n[Done] Day 1 完成！9 张表已全部导入 MySQL 数据库 ecommerce_analysis")
+print("\n数据入库完成——9 张表已全部导入 MySQL 数据库 ecommerce_analysis")
