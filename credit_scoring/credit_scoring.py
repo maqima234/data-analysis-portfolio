@@ -17,9 +17,9 @@ from sklearn.model_selection import train_test_split
 target = 'SeriousDlqin2yrs'
 
 # ============================================================
-# Step 1: 数据加载与清洗
+# 数据加载与清洗
 # ============================================================
-print('=== Step 1: 数据清洗 ===')
+print('数据清洗...')
 
 df = pd.read_csv(r'C:\Users\86186\Desktop\credit_risk_project\data\cs-training.csv', index_col=0)
 
@@ -34,9 +34,9 @@ print(f'清洗后样本量: {len(df):,}')
 print(f'违约率: {df[target].mean()*100:.2f}%')
 
 # ============================================================
-# Step 2: IV 筛选
+# IV 筛选
 # ============================================================
-print('\n=== Step 2: IV 筛选 ===')
+print('\nIV 筛选...')
 
 feature_cols = [c for c in df.columns if c != target]
 iv_results = {}
@@ -65,9 +65,9 @@ selected_vars = [v for v, iv in iv_results.items() if iv > 0.02]
 print(f'入模变量: {len(selected_vars)} 个')
 
 # ============================================================
-# Step 3: WOE编码 + 切分训练/测试集 + 建模
+# WOE编码 + 切分训练/测试集 + 建模
 # ============================================================
-print('\n=== Step 3: WOE编码与建模 ===')
+print('\nWOE编码与建模...')
 
 df_woe = df[[target]].copy()
 for col in selected_vars:
@@ -102,9 +102,9 @@ for col, coef in zip(woe_cols, lr.coef_[0]):
 print(f'  截距 = {lr.intercept_[0]:.4f}')
 
 # ============================================================
-# Step 4: 评分卡
+# 评分卡转换
 # ============================================================
-print('\n=== Step 4: 评分卡 ===')
+print('\n评分卡转换...')
 
 base_score = 600
 pdo = 50
@@ -132,9 +132,9 @@ for col in score_vars:
         print(f'    {str(idx):30s} WOE={row["woe"]:+.3f}  Score={points:+.0f}')
 
 # ============================================================
-# Step 5: 评估
+# 模型评估
 # ============================================================
-print('\n=== Step 5: 模型评估 ===')
+print('\n模型评估...')
 
 y_train_prob = lr.predict_proba(X_train)[:, 1]
 y_test_prob = lr.predict_proba(X_test)[:, 1]
@@ -176,7 +176,7 @@ plt.tight_layout()
 plt.savefig('output_ks.png', dpi=150)
 plt.close()
 
-print(f'\n=== 最终评估总结 ===')
+print('\n=== 最终评估总结 ===')
 print(f'训练集 AUC: {auc_train:.4f}  |  KS: {ks_train:.4f}')
 print(f'测试集 AUC: {auc_test:.4f}  |  KS: {ks_test:.4f}')
 gap = auc_train - auc_test
