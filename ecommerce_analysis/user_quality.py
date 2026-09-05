@@ -168,7 +168,7 @@ df_repurchase_gap = pd.read_sql_query("""
 print(f"\n复购间隔统计:")
 if len(df_repurchase_gap) == 0:
     print("  无可分析数据——样本期内 delivered 订单中未观察到复购行为。")
-    print("  这印证了第一节的发现：每个客户在样本期内均仅完成一次购买。")
+    print("  这印证了第一节的发现：每个客户在样本期内仅完成一次购买。")
     # 跳过复购间隔图表，直接进入用户价值分层
     print("[!] 复购间隔图跳过（无复购数据）")
     plt.close('all')  # 清理可能残留的figure
