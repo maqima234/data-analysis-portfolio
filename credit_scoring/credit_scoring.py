@@ -354,6 +354,31 @@ def main():
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / "roc_compare.png", dpi=150)
     plt.close()
+    # --- KS 曲线图（测试集，样本按预测概率升序累计）---
+    order = np.argsort(proba_te)
+    y_sorted = y_test.values[order]
+    n = len(y_sorted)
+    cum_bad = np.cumsum(y_sorted) / y_sorted.sum()
+    cum_good = np.cumsum(1 - y_sorted) / (1 - y_sorted).sum()
+    x_ks = np.arange(1, n + 1) / n
+    ks_val = float(np.max(np.abs(cum_bad - cum_good)))
+    plt.figure(figsize=(7, 5))
+    plt.plot(x_ks, cum_good, color="#8BC8EA", lw=2, label="累计好客户占比")
+    plt.plot(x_ks, cum_bad, color="#E1A04A", lw=2, label="累计坏客户占比")
+    k_idx = int(np.argmax(np.abs(cum_bad - cum_good)))
+    plt.plot([x_ks[k_idx], x_ks[k_idx]], [cum_good[k_idx], cum_bad[k_idx]],
+             color="gray", ls="--", lw=1)
+    plt.text(0.05, 0.90, f"KS = {ks_val:.4f}", transform=plt.gca().transAxes,
+             fontsize=12, ha="left", va="top",
+             bbox=dict(boxstyle="round,pad=0.35", facecolor="white",
+                       edgecolor="#3C6E91", lw=1))
+    plt.xlabel("样本按预测违约概率升序的累计占比")
+    plt.ylabel("累计占比")
+    plt.title("KS 曲线（测试集）")
+    plt.legend(loc="center right", fontsize=10)
+    plt.tight_layout()
+    plt.savefig(OUTPUT_DIR / "ks_curve.png", dpi=150)
+    plt.close()
 
     # --- IV 条形图 ---
     ivs = [(c, bin_meta[c]["iv"]) for c in selected]
@@ -419,6 +444,20 @@ def main():
     plt.title("评分卡单调性：分数越高违约率越低")
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / "score_monotonicity.png", dpi=150)
+    plt.close()
+    # --- 评分分布图（正常 vs 违约客户，测试集）---
+    bins = np.linspace(score_te.min(), score_te.max(), 40)
+    plt.figure(figsize=(7, 5))
+    plt.hist(score_te[y_test.values == 0], bins=bins, alpha=0.65,
+             color="#8BC8EA", label="正常客户")
+    plt.hist(score_te[y_test.values == 1], bins=bins, alpha=0.7,
+             color="#E1A04A", label="违约客户")
+    plt.xlabel("评分")
+    plt.ylabel("客户数")
+    plt.title("评分分布：正常客户 vs 违约客户（测试集）")
+    plt.legend(loc="upper right", fontsize=10)
+    plt.tight_layout()
+    plt.savefig(OUTPUT_DIR / "score_distribution.png", dpi=150)
     plt.close()
 
     # ============================================================
