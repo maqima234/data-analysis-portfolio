@@ -60,8 +60,8 @@ one_time_pct = df_freq[df_freq['frequency'] == '1 time']['user_pct'].values[0]
 one_time_gmv = df_freq[df_freq['frequency'] == '1 time']['gmv_pct'].values[0]
 total_users = df_freq['user_count'].sum()
 
-print(f"\n→ 一次性用户占 {one_time_pct}% 的用户量，贡献 {one_time_gmv}% 的 GMV")
-print(f"→ 平台本质上是一个'一锤子买卖'模型")
+print(f"\n→ 样本期内 {one_time_pct}% 用户仅完成一次购买，贡献 {one_time_gmv}% 的 GMV")
+print(f"→ 平台呈现'单次转化'特征，缺乏复购环节")
 
 # ---------- 图1: 购买频次分布 ----------
 fig, axes = plt.subplots(1, 2, figsize=(13, 5))
@@ -140,7 +140,7 @@ df_retention = pd.read_sql_query("""
 # 保留2016-09到2018-06的队列（至少留3个月观察窗口）
 df_retention_valid = df_retention[df_retention['cohort_month'] <= '2018-06']
 
-print(f"月度队列复购率（{df_retention_valid['cohort_month'].iloc[0]} ~ {df_retention_valid['cohort_month'].iloc[-1]}）:")
+print(f"月度队列复购率（{df_retention_valid['cohort_month'].iloc[0]} ~ {df_retention_valid['cohort_month'].iloc[-1]}，样本期内）:")
 print(f"  平均复购率: {df_retention_valid['repurchase_rate'].mean():.2f}%")
 print(f"  最高复购率: {df_retention_valid['repurchase_rate'].max():.2f}% ({df_retention_valid.loc[df_retention_valid['repurchase_rate'].idxmax(), 'cohort_month']})")
 print(f"  最低复购率: {df_retention_valid['repurchase_rate'].min():.2f}% ({df_retention_valid.loc[df_retention_valid['repurchase_rate'].idxmin(), 'cohort_month']})")
@@ -167,8 +167,8 @@ df_repurchase_gap = pd.read_sql_query("""
 
 print(f"\n复购间隔统计:")
 if len(df_repurchase_gap) == 0:
-    print("  无可分析数据——平台 delivered 订单中不存在任何复购行为。")
-    print("  这印证了第一节的发现：每个客户仅完成过一次交易。")
+    print("  无可分析数据——样本期内 delivered 订单中未观察到复购行为。")
+    print("  这印证了第一节的发现：每个客户仅有一次购买记录。")
     # 跳过复购间隔图表，直接进入用户价值分层
     print("[!] 复购间隔图跳过（无复购数据）")
     plt.close('all')  # 清理可能残留的figure
@@ -179,15 +179,15 @@ else:
 
 # ---------- 图2: 复购分析 ----------
 if len(df_repurchase_gap) == 0:
-    # 无复购数据时，展示队列规模趋势 + 零复购标注
+    # 无复购数据时，展示队列规模趋势 + 样本窗口标注
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.bar(range(len(df_retention_valid)), df_retention_valid['cohort_size'],
            color='steelblue', alpha=0.8)
     ax.set_xticks(range(0, len(df_retention_valid), 3))
     ax.set_xticklabels(df_retention_valid['cohort_month'].iloc[::3], rotation=45, ha='right')
     ax.set_ylabel('Cohort Size')
-    ax.set_title('Monthly New Customer Cohorts (Zero Repurchase Across All Cohorts)')
-    ax.text(0.5, 0.95, 'All cohorts: 0.00% repurchase rate\nEvery customer bought exactly once.',
+    ax.set_title('Monthly New Customer Cohorts (No Repurchase Observed in Sample Window)')
+    ax.text(0.5, 0.95, 'All cohorts: 0.00% repurchase rate (sample window)\nEvery customer has a single purchase record.',
             transform=ax.transAxes, ha='center', va='top',
             fontsize=14, color='crimson', fontweight='bold',
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
@@ -605,11 +605,11 @@ print(f"""
 │                                                                  │
 │  ① 用户粘性：极度脆弱                                             │
 │     · {one_time_pct:.1f}% 用户仅购买 1 次，贡献 {one_time_gmv:.1f}% 的 GMV                           │
-│     · 月度队列复购率平均仅 {df_retention_valid['repurchase_rate'].mean():.2f}%，且无明显改善趋势               │
+│     · 样本期内月度队列复购率平均 {df_retention_valid['repurchase_rate'].mean():.2f}%，无明显改善趋势               │
 │     · 用户生命周期价值（LTV）≈ 单次交易价值，几乎无复购溢价        │
 │                                                                  │
 │  ② 复购行为：不存在                                               │
-│     · 各月度队列复购率均为 0.00%，无任何复购记录                   │
+│     · 各月度队列复购率均为 0.00%（受数据窗口限制）                   │
 │     · 平台无"复购间隔"概念——每个用户仅完成一次交易               │
 │     · 获客 → 转化 → 流失，LTV ≈ 单次交易价值                       │
 │                                                                  │
@@ -623,7 +623,7 @@ print(f"""
 │     · 支付：信用卡平均支付 252 BRL vs 其他 157 BRL        │
 │     · 集中在 AL、PB、PA 等东北部州                                 │
 │                                                                  │
-│  [!] 核心问题：平台存活在"一次性客户"模式中                           │
+│  [!] 核心问题：平台依赖"一次性客户"模式（样本期内）                           │
 │     获客成本持续消耗，但用户不回来 → LTV/CAC 模型不可持续            │
 └──────────────────────────────────────────────────────────────────┘
 

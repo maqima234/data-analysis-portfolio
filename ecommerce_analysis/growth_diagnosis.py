@@ -155,12 +155,12 @@ if repeat_users > 0:
     for _, row in df_repurchase[df_repurchase['frequency'] != '1 order'].iterrows():
         print(f"{row['frequency']}: {row['user_count']:,} ({row['user_count']/total_users*100:.2f}%)")
 else:
-    print("购买≥2次的用户: 0 —— 复购率为真正的 0%")
+    print("购买≥2次的用户: 0 —— 样本期内未观察到复购记录")
 
 if repeat_rate == 0:
-    print("\n[!] 核心发现：平台 delivered 订单的复购率为绝对零。")
-    print("  这意味着每一个完成交易的客户，都再没有下过第二单。")
-    print("  这不是'复购率低'的问题，而是根本没有复购机制。")
+    print("\n[!] 核心发现：样本期内（2016-09 ~ 2018-08）未观察到复购行为。")
+    print("  96,478 个完成交易的客户均只有一次购买记录；")
+    print("  该结论受数据窗口限制，不能排除窗口外复购。")
     print("  分析改为：用户月度获取趋势 + 客单价变化（跳过新老客拆解，因为没有老客）")
 
 # ---------- 图2: 复购诊断（根据是否有复购切换展示）----------
@@ -172,7 +172,7 @@ if repeat_users > 0:
     pie_data = df_repurchase['user_count'].tolist()
     pie_colors = ['#e74c3c', '#f39c12', '#2ecc71']
 else:
-    pie_labels = ['One-time buyers\n(never returned)']
+    pie_labels = ['One-time buyers\n(in sample window)']
     pie_data = [total_users]
     pie_colors = ['#e74c3c']
 
@@ -181,7 +181,7 @@ axes[0].pie(pie_data, labels=pie_labels, autopct='%1.1f%%',
             explode=tuple([0.05] + [0] * (len(pie_data) - 1)))
 axes[0].set_title('Purchase Frequency Distribution')
 
-# 右: 月度新客获取趋势（因为没有复购，改为展示每月拉新量）
+# 右: 月度新客获取趋势（样本期内无复购记录，展示每月拉新量）
 df_monthly_new = pd.read_sql_query("""
     SELECT
         DATE_FORMAT(下单时间, '%Y-%m') AS month,
@@ -209,7 +209,7 @@ axes[1].axhline(second_half, color='darkorange', linestyle=':', alpha=0.5)
 axes[1].text(len(df_monthly_new) - 1, second_half,
              f'Recent avg: {second_half:.0f}', fontsize=8, color='darkorange')
 
-plt.suptitle('Diagnosis 1 (cont.): Zero Repurchase — Pure Acquisition Model',
+plt.suptitle('Diagnosis 1 (cont.): No Repurchase Observed — Acquisition-Driven',
              fontsize=14, fontweight='bold')
 plt.tight_layout()
 plt.savefig('outputs/growth_02_zero_repurchase.png', dpi=150, bbox_inches='tight')
@@ -415,10 +415,10 @@ print(f"""
 │     · GMV 中位月环比 +{df_valid['gmv_growth'].median():.1f}%，{growth_months}/{total_months} 个月正增长                      │
 │     · 客单价稳定在 {df_valid['aov'].mean():.0f} BRL 附近，波动幅度远小于订单量                    │
 │                                                                  │
-│  ② 增长引擎：100% 纯拉新驱动（复购率 = 0%）                         │
-│     · 所有 {total_users:,} 个完成交易的客户，没有任何人下过第二单                  │
-│     · 这不是"复购率低"，而是"没有复购机制"——平台本质是                      │
-│       一个纯获客→转化→流失的漏斗，不是用户运营平台                    │
+│  ② 增长引擎：新客驱动（样本期内复购记录极少）                         │
+│     · {total_users:,} 个完成交易的客户均只有一次购买记录（样本期内）                  │
+│     · 平台呈现"获客→转化→流失"的单次转化特征                      │
+│       （受 2016-09 ~ 2018-08 数据窗口限制）                    │
 │                                                                  │
 │  ③ 品类结构：头部集中，增长分化                                    │
 │     · 增长品类 {growing_cats} 个 vs 萎缩品类 {declining_cats} 个                                │
@@ -434,7 +434,7 @@ print(f"""
 
 业务建议:
   ① 复购是生死线：在下单后 7/30/90 天做品类关联推荐触达，
-     即使复购率从 0% 提升到 3%，GMV 即可直接增长 3%
+     若复购率从接近 0% 的水平提升，GMV 可获得对应增量
   ② 品类策略：对增长品类（{', '.join(cat_growth.head(3).index.tolist())}）加大供应链投入；
      对萎缩品类分析是需求端还是供给端问题
   ③ 区域策略：{top1_state['state']} 州做深渗透，同时在 GMV 占比 5-10% 的腰部州
