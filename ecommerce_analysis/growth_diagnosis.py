@@ -47,17 +47,17 @@ df_trend['gmv_growth'] = df_trend['gmv'].pct_change() * 100
 df_trend['order_growth'] = df_trend['order_count'].pct_change() * 100
 df_trend['aov_growth'] = df_trend['aov'].pct_change() * 100
 
-# 剔除首月（无环比）和末月（可能不完整）
+# 剔除首月（无环比）和末月（可能不完整）；环比增速用中位数（启动期低基数会使均值失真）
 df_valid = df_trend.iloc[1:-1]  # 用于统计的月份
 
 print(f"数据跨度: {df_trend['month'].iloc[0]} ~ {df_trend['month'].iloc[-1]}")
 print(f"月均 GMV: {df_valid['gmv'].mean():,.0f}  月均订单量: {df_valid['order_count'].mean():,.0f}  月均客单价: {df_valid['aov'].mean():.0f}")
-print(f"GMV 月均环比增速: {df_valid['gmv_growth'].mean():.1f}%")
-print(f"订单量月均环比增速: {df_valid['order_growth'].mean():.1f}%")
-print(f"客单价月均环比增速: {df_valid['aov_growth'].mean():.1f}%")
+print(f"GMV 中位月环比增速: {df_valid['gmv_growth'].median():.1f}%")
+print(f"订单量中位月环比增速: {df_valid['order_growth'].median():.1f}%")
+print(f"客单价中位月环比增速: {df_valid['aov_growth'].median():.1f}%")
 
 # 判断增长主驱动
-if abs(df_valid['order_growth'].mean()) > abs(df_valid['aov_growth'].mean()) * 1.5:
+if abs(df_valid['order_growth'].median()) > abs(df_valid['aov_growth'].median()) * 1.5:
     driver = "订单量增长是 GMV 增长的主要驱动力，客单价变化幅度远小于订单量波动"
 else:
     driver = "订单量和客单价共同驱动 GMV 增长"
@@ -245,9 +245,9 @@ df_cat_total = df_cat_monthly.groupby('category').agg(
     months_active=('month', 'nunique')
 ).sort_values('total_gmv', ascending=False)
 
-# 计算每个品类的增长贡献：首尾两期GMV差值
-first_month = df_cat_monthly['month'].min()
+# 计算每个品类的增长贡献：同比口径（末月往前 12 个月），避免启动期低基数失真
 last_month = df_cat_monthly['month'].max()
+first_month = (pd.to_datetime(last_month) - pd.DateOffset(months=12)).strftime('%Y-%m')
 df_cat_first = df_cat_monthly[df_cat_monthly['month'] == first_month].set_index('category')
 df_cat_last = df_cat_monthly[df_cat_monthly['month'] == last_month].set_index('category')
 
@@ -412,7 +412,7 @@ print(f"""
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ① 增长模式：{driver}                        │
-│     · GMV 月均环比 +{df_valid['gmv_growth'].mean():.1f}%，{growth_months}/{total_months} 个月正增长                      │
+│     · GMV 中位月环比 +{df_valid['gmv_growth'].median():.1f}%，{growth_months}/{total_months} 个月正增长                      │
 │     · 客单价稳定在 {df_valid['aov'].mean():.0f} BRL 附近，波动幅度远小于订单量                    │
 │                                                                  │
 │  ② 增长引擎：100% 纯拉新驱动（复购率 = 0%）                         │

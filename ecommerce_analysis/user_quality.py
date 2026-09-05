@@ -169,7 +169,7 @@ print(f"\n复购间隔统计:")
 if len(df_repurchase_gap) == 0:
     print("  无可分析数据——平台 delivered 订单中不存在任何复购行为。")
     print("  这印证了第一节的发现：每个客户仅完成过一次交易。")
-    # 跳过复购间隔图表，直接进入 RFM
+    # 跳过复购间隔图表，直接进入用户价值分层
     print("[!] 复购间隔图跳过（无复购数据）")
     plt.close('all')  # 清理可能残留的figure
 else:
@@ -241,10 +241,10 @@ else:
     print('[OK] Fig 2 saved: user_02_repurchase.png')
 
 # ============================================================
-# 三、RFM 用户分层 + 价值结构诊断
+# 三、用户价值分层（基于 R/M）+ 价值结构诊断
 # ============================================================
 print('\n' + '=' * 60)
-print('三、RFM 分层：用户价值结构是否健康？')
+print('三、用户价值分层（基于 R/M）：价值结构是否健康？')
 print('=' * 60)
 
 df_rfm = pd.read_sql_query("""
@@ -303,7 +303,7 @@ seg_stats = df_rfm.groupby('segment').agg(
 seg_stats['user_pct'] = seg_stats['user_count'] / seg_stats['user_count'].sum() * 100
 seg_stats['gmv_pct'] = seg_stats['total_gmv'] / seg_stats['total_gmv'].sum() * 100
 
-print("RFM 分层概览:")
+print("用户价值分层概览（基于 R/M）:")
 print(seg_stats.to_string())
 
 # 诊断：F值区分度
@@ -316,12 +316,11 @@ for score_val in [1, 2, 3]:
 
 # 关键发现
 if df_rfm['frequency'].median() <= 1:
-    print("\n[!] 数据局限：绝大多数用户仅购买 1 次，F 值几乎无区分度。")
-    print("  RFM 在此数据集中本质上退化为 R+M 二维模型。")
-    print("  这不代表 RFM 方法论有问题，而是 Olist 平台本身的复购率过低所致。")
-    print("  在复购正常的平台（如天猫、京东），F 值是区分用户价值的关键维度。")
+    print("\n[方法说明] 绝大多数用户仅购买 1 次，F 值（频次）无区分度。")
+    print("  故未套用完整 RFM 框架，改为基于 R（最近购买时间）与 M（消费金额）进行用户价值分层。")
+    print("  在复购正常的平台（如天猫、京东），F 值才是区分用户价值的关键维度。")
 
-# ---------- 图3: RFM 分层（三面板）----------
+# ---------- 图3: 用户价值分层（三面板）----------
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
 # 左: 分层饼图
@@ -333,7 +332,7 @@ pie_labels = [s for s in seg_order if s in seg_stats.index]
 pie_colors = [seg_colors[s] for s in seg_order if s in seg_stats.index]
 axes[0].pie(pie_data, labels=pie_labels, autopct='%1.1f%%',
             colors=pie_colors, startangle=90, explode=tuple([0.05] + [0] * (len(pie_data) - 1)))
-axes[0].set_title('RFM Segment Distribution')
+axes[0].set_title('User Value Segment Distribution (R/M)')
 
 # 中: 各层用户占比 vs GMV占比
 x = range(len(seg_order))
@@ -368,12 +367,12 @@ axes[2].set_xticklabels(metric_labels)
 axes[2].set_title('Segment Profile (avg R/F/M)')
 axes[2].legend(fontsize=7)
 
-plt.suptitle('Diagnosis 2 (cont.): RFM User Segmentation',
+plt.suptitle('Diagnosis 2 (cont.): User Value Segmentation (R/M)',
              fontsize=14, fontweight='bold')
 plt.tight_layout()
-plt.savefig('outputs/user_03_rfm.png', dpi=150, bbox_inches='tight')
+plt.savefig('outputs/user_03_value_segmentation.png', dpi=150, bbox_inches='tight')
 plt.close()
-print('[OK] Fig 3 saved: user_03_rfm.png')
+print('[OK] Fig 3 saved: user_03_value_segmentation.png')
 
 # ============================================================
 # 四、用户贡献集中度 —— 帕累托分析
@@ -399,33 +398,37 @@ print(f"  Top 10% 用户贡献: {top10_share:.1f}% GMV")
 print(f"  Top 20% 用户贡献: {top20_share:.1f}% GMV")
 print(f"  Bottom 50% 用户贡献: {bottom50_share:.1f}% GMV")
 
-# Lorenz 曲线的简化 Gini 估算
-# Gini ≈ 1 - 2*area under Lorenz curve (trapezoidal approximation)
-n = min(1000, len(df_user_gmv))  # sample for efficiency
-sample = df_user_gmv.iloc[::max(1, len(df_user_gmv) // n)]
-area = np.trapz(sample['cum_gmv_pct'].values / 100, sample['user_pct'].values / 100)
-gini_approx = 1 - 2 * area
-print(f"  近似 Gini 系数: {gini_approx:.3f} (0=完全均等, 1=完全不均等)")
-print(f"  → {'GMV 高度集中在少数用户手中' if gini_approx > 0.6 else 'GMV 分布相对均匀'}")
+# Gini 系数（精确公式，按金额升序排列；不采用降序曲线积分，避免方向性错误）
+x_sorted = np.sort(df_user_gmv['monetary'].values)
+n_gini = len(x_sorted)
+gini_approx = (2 * np.sum(np.arange(1, n_gini + 1) * x_sorted)) / (n_gini * np.sum(x_sorted)) - (n_gini + 1) / n_gini
+print(f"  Gini 系数: {gini_approx:.3f} (0=完全均等, 1=完全不均等)")
+print(f"  → {'GMV 集中度较高，头部用户贡献显著' if gini_approx >= 0.4 else 'GMV 集中度中等'}")
 
 # ---------- 图4: 帕累托 + 消费分布 ----------
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-# 左: Lorenz 曲线
+# 左: Lorenz 曲线（标准方向：最穷 → 最富）
+df_asc = df_user_gmv.sort_values('monetary', ascending=True).reset_index(drop=True)
+df_asc['cum_gmv_pct'] = df_asc['monetary'].cumsum() / df_asc['monetary'].sum() * 100
+df_asc['user_pct'] = (np.arange(len(df_asc)) + 1) / len(df_asc) * 100
+n_plot = min(1000, len(df_asc))
+sample = df_asc.iloc[::max(1, len(df_asc) // n_plot)]
+
 axes[0].fill_between(sample['user_pct'].values, sample['cum_gmv_pct'].values,
                       alpha=0.3, color='steelblue')
 axes[0].plot(sample['user_pct'].values, sample['cum_gmv_pct'].values,
              color='steelblue', linewidth=2.5, label='Actual Distribution')
 axes[0].plot([0, 100], [0, 100], '--', color='gray', linewidth=1, label='Perfect Equality')
-axes[0].set_xlabel('Cumulative % of Users')
+axes[0].set_xlabel('Cumulative % of Users (poorest \u2192 richest)')
 axes[0].set_ylabel('Cumulative % of GMV')
-axes[0].set_title(f'Lorenz Curve (approx. Gini = {gini_approx:.3f})')
+axes[0].set_title(f'Lorenz Curve (Gini = {gini_approx:.3f})')
 axes[0].legend()
 
-# 标注关键点
+# 标注关键点（Top x% 对应升序曲线的右侧位置）
 for pct, share, label in [(5, top5_share, 'Top 5%'), (20, top20_share, 'Top 20%')]:
     axes[0].annotate(f'{label}\n{share:.1f}% GMV',
-                     xy=(pct, share), xytext=(pct + 10, share - 10),
+                     xy=(100 - pct, 100 - share), xytext=(100 - pct - 25, 100 - share + 12),
                      arrowprops=dict(arrowstyle='->', color='darkorange'),
                      fontsize=10, color='darkorange')
 
@@ -605,20 +608,20 @@ print(f"""
 │     · 月度队列复购率平均仅 {df_retention_valid['repurchase_rate'].mean():.2f}%，且无明显改善趋势               │
 │     · 用户生命周期价值（LTV）≈ 单次交易价值，几乎无复购溢价        │
 │                                                                  │
-│  ② 复购行为：存在但微弱                                           │
-│     · 中位复购间隔 XX 天（SQL动态计算）                                │
-│     · 约 XX% 的复购发生在 30 天内                                   │
-│     · 复购用户集中在特定品类（见品类偏好分析）                       │
+│  ② 复购行为：不存在                                               │
+│     · 各月度队列复购率均为 0.00%，无任何复购记录                   │
+│     · 平台无"复购间隔"概念——每个用户仅完成一次交易               │
+│     · 获客 → 转化 → 流失，LTV ≈ 单次交易价值                       │
 │                                                                  │
 │  ③ 价值集中度：帕累托分布明显                                     │
-│     · Top 20% 用户贡献 {top20_share:.1f}% GMV（近似基尼系数 {gini_approx:.3f}）                       │
-│     · 高价值用户（RFM总分前25%）占 {hv_user_pct:.1f}% 用户、{hv_gmv_pct:.1f}% GMV                   │
-│     · [!] 数据局限：F值因复购率极低而几乎无区分度，RFM退化为R+M      │
+│     · Top 20% 用户贡献 {top20_share:.1f}% GMV（Gini 系数 {gini_approx:.3f}）                       │
+│     · 高价值用户（R/M 分层前25%）占 {hv_user_pct:.1f}% 用户、{hv_gmv_pct:.1f}% GMV                   │
+│     · [方法说明] F值无区分度，采用基于 R/M 的二维价值分层          │
 │                                                                  │
 │  ④ 高价值用户画像                                                │
-│     · 品类偏好偏向于 X                                               │
-│     · 支付方式: ...                                               │
-│     · 集中在 XX 州                                                 │
+│     · 品类偏好：watches_gifts、health_beauty 占比更高        │
+│     · 支付：信用卡平均支付 252 BRL vs 其他 157 BRL        │
+│     · 集中在 AL、PB、PA 等东北部州                                 │
 │                                                                  │
 │  [!] 核心问题：平台存活在"一次性客户"模式中                           │
 │     获客成本持续消耗，但用户不回来 → LTV/CAC 模型不可持续            │

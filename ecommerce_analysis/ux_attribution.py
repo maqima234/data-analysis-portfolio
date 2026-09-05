@@ -1,5 +1,5 @@
 """
-用户体验归因分析
+用户体验相关性分析
 诊断问题：什么因素影响用户评分？
 诊断问题：什么因素影响用户评分？
 """
@@ -85,10 +85,10 @@ plt.close()
 print('[OK] Fig 1 saved: ux_01_logistics_timeline.png')
 
 # ============================================================
-# 二、延迟 vs 评分 —— 核心归因分析
+# 二、延迟 vs 评分 —— 相关性分析
 # ============================================================
 print('\n' + '=' * 60)
-print('二、物流延迟对用户评分的影响（核心归因）')
+print('二、物流延迟与用户评分的相关性（核心发现）')
 print('=' * 60)
 
 df_delay_score = pd.read_sql_query("""
@@ -130,17 +130,17 @@ for bar, val in zip(bars, df_delay_score['bad_rate_pct']):
 axes[1].set_ylabel('Bad Review Rate (1-2 pts) %')
 axes[1].set_title('Bad Review Rate: Delayed vs On Time')
 
-plt.suptitle('Analysis 2: Delivery Delay Impact on User Rating', fontsize=14, fontweight='bold')
+plt.suptitle('Analysis 2: Delivery Delay vs User Rating (Correlation)', fontsize=14, fontweight='bold')
 plt.tight_layout()
 plt.savefig('outputs/ux_02_delay_vs_rating.png', dpi=150, bbox_inches='tight')
 plt.close()
 print('[OK] Fig 2 saved: ux_02_delay_vs_rating.png')
 
 # ============================================================
-# 三、延迟归因——按地区（用 customers 表关联）
+# 三、延迟风险定位——按地区（用 customers 表关联）
 # ============================================================
 print('\n' + '=' * 60)
-print('三、延迟归因：各州物流表现')
+print('三、延迟风险定位：各州物流表现')
 print('=' * 60)
 
 df_region = pd.read_sql_query("""
@@ -190,10 +190,10 @@ plt.close()
 print('[OK] Fig 3 saved: ux_03_delay_by_region.png')
 
 # ============================================================
-# 四、延迟归因——按品类
+# 四、延迟风险定位——按品类
 # ============================================================
 print('\n' + '=' * 60)
-print('四、延迟归因：哪些品类的物流体验最差？')
+print('四、延迟风险定位：哪些品类的物流体验最差？')
 print('=' * 60)
 
 df_category = pd.read_sql_query("""
@@ -332,7 +332,7 @@ print(f"""
 ┌─────────────────────────────────────────────────────────────┐
 │  诊断结论                                                    │
 ├─────────────────────────────────────────────────────────────┤
-│  1. 物流延迟是影响评分的核心因素                               │
+│  1. 物流延迟与低评分高度相关（非严格因果，为相关关系）          │
 │     · 准时订单平均评分: {on_time_score}  →  延迟订单平均评分: {delayed_score}（差距 {score_gap} 分）       │
 │     · 延迟订单差评率: {delayed_bad}%  →  准时订单差评率: {on_time_bad}%（高出 {bad_gap} 个百分点）        │
 │                                                             │
@@ -345,7 +345,7 @@ print(f"""
 │     · 大件/重货品类延迟率普遍更高                               │
 │                                                             │
 │  4. 延迟存在"剂量反应"关系                                     │
-│     · 延迟 1-3 天评分即明显下降；延迟 >14 天评分跌破 XX         │
+│     · 延迟 1-3 天评分即明显下降；延迟 >14 天评分仅 1.72        │
 │     · 每多延迟一周，差评率翻倍                                  │
 └─────────────────────────────────────────────────────────────┘
 
@@ -359,5 +359,5 @@ print(f"""
 
 conn.close()
 print('=' * 60)
-print('用户体验归因分析完成，5 张图已保存至 outputs/')
+print('用户体验相关性分析完成，5 张图已保存至 outputs/')
 print('=' * 60)
